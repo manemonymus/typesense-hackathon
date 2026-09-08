@@ -3,167 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Layover &mdash; plan your time between stops</title>
+    <title>Building Visit Planner</title>
     <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-    <svg class="sprite" aria-hidden="true" focusable="false">
-        <symbol id="icon-pin" viewBox="0 0 24 24">
-            <path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11z" fill="none" stroke="currentColor"
-                  stroke-width="1.7" stroke-linejoin="round"/>
-            <circle cx="12" cy="10" r="2.4" fill="none" stroke="currentColor" stroke-width="1.7"/>
-        </symbol>
-        <symbol id="icon-clock" viewBox="0 0 24 24">
-            <circle cx="12" cy="12" r="8.4" fill="none" stroke="currentColor" stroke-width="1.7"/>
-            <path d="M12 7.6V12l3 2" fill="none" stroke="currentColor" stroke-width="1.7"
-                  stroke-linecap="round" stroke-linejoin="round"/>
-        </symbol>
-        <symbol id="icon-close" viewBox="0 0 24 24">
-            <path d="M6.4 6.4l11.2 11.2M17.6 6.4L6.4 17.6" fill="none" stroke="currentColor"
-                  stroke-width="1.8" stroke-linecap="round"/>
-        </symbol>
-        <symbol id="icon-plus" viewBox="0 0 24 24">
-            <path d="M12 5.5v13M5.5 12h13" fill="none" stroke="currentColor" stroke-width="1.8"
-                  stroke-linecap="round"/>
-        </symbol>
-        <symbol id="icon-drag" viewBox="0 0 24 24">
-            <g fill="currentColor">
-                <circle cx="9" cy="6" r="1.5"/><circle cx="15" cy="6" r="1.5"/>
-                <circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/>
-                <circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="18" r="1.5"/>
-            </g>
-        </symbol>
-        <symbol id="icon-arrow" viewBox="0 0 24 24">
-            <path d="M4 12h15m-5.5-5.5L19 12l-5.5 5.5" fill="none" stroke="currentColor"
-                  stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
-        </symbol>
-    </svg>
+    <div class="container">
+        <h1>Building Visit Planner</h1>
 
-    <main class="page">
-        <div class="hero">
-            <span class="brand">
-                <svg class="icon" aria-hidden="true"><use href="#icon-pin"/></svg>
-                Layover
-            </span>
-            <h1>Make the most of the time you&rsquo;ve got.</h1>
-            <p class="lede">
-                Five hours in Athens or a weekend in Chicago &mdash; tell us your window
-                and the places you care about, and we&rsquo;ll lay out the day.
-            </p>
-            <button class="btn btn-primary btn-lg" id="openPlanner">
-                <svg class="icon" aria-hidden="true"><use href="#icon-clock"/></svg>
-                Plan my day
-            </button>
-        </div>
-
-        <section id="result" class="result" aria-live="polite"></section>
-    </main>
-
-    <dialog id="plannerDialog" aria-labelledby="plannerTitle">
-        <form id="plannerForm" novalidate>
-
-            <header class="sheet-head">
-                <div class="sheet-titles">
-                    <h2 id="plannerTitle">Plan your visit</h2>
-                    <p class="sheet-sub" id="windowHint"></p>
-                </div>
-                <button type="button" class="icon-btn" id="closePlanner" aria-label="Close">
-                    <svg class="icon" aria-hidden="true"><use href="#icon-close"/></svg>
-                </button>
-            </header>
-
-            <div class="sheet-body">
-
-                <section class="block">
-                    <div class="block-head">
-                        <h3>Your window</h3>
-                    </div>
-
-                    <div class="window">
-                        <div class="window-slot" data-field="startTime">
-                            <span class="window-label" id="startTimeLabel">Starts</span>
-                            <div class="picker" id="startTimePicker" role="group"
-                                 aria-labelledby="startTimeLabel"></div>
-                        </div>
-
-                        <svg class="window-arrow icon" aria-hidden="true"><use href="#icon-arrow"/></svg>
-
-                        <div class="window-slot" data-field="endTime">
-                            <span class="window-label" id="endTimeLabel">Ends</span>
-                            <div class="picker" id="endTimePicker" role="group"
-                                 aria-labelledby="endTimeLabel"></div>
-                        </div>
-                    </div>
-                    <p class="error center" data-error-for="window"></p>
-                </section>
-
-                <section class="block">
-                    <div class="block-head">
-                        <h3>Your stops</h3>
-                        <span class="pill" id="budgetPill"></span>
-                    </div>
-
-                    <div id="locationList" class="stops"></div>
-
-                    <button type="button" class="add-stop" id="addLocation">
-                        <span class="add-mark">
-                            <svg class="icon" aria-hidden="true"><use href="#icon-plus"/></svg>
-                        </span>
-                        <span data-add-label>Add stop</span>
-                    </button>
-
-                    <p class="error" data-error-for="locations"></p>
-                </section>
-
+        <form id="scheduleForm" onsubmit="getSchedule(event)">
+            <div class="form-row">
+                <label for="s-time">Start time:</label>
+                <input type="text" id="s-time" name="s-time">
             </div>
 
-            <footer class="sheet-foot">
-                <p class="summary" id="formSummary" role="status"></p>
-                <div class="foot-actions">
-                    <button type="button" class="btn btn-quiet" id="cancelPlanner">Cancel</button>
-                    <button type="submit" class="btn btn-primary" id="submitPlanner">Build schedule</button>
-                </div>
-            </footer>
+            <div class="form-row">
+                <label for="e-time">End time:</label>
+                <input type="text" id="e-time" name="e-time">
+            </div>
 
+            <div class="form-row">
+                <label for="num-buildings">Number of buildings:</label>
+                <input type="text" id="num-buildings" name="num-buildings">
+            </div>
+
+            <button type="button" class="secondary-button" onclick="enterBuildingNames()">Enter building names</button>
+
+            <div id="enter-building"></div>
+
+            <button type="submit">Create Schedule</button>
         </form>
-    </dialog>
 
-    <template id="locationRowTemplate">
-        <div class="stop" data-row>
-            <span class="stop-marker" aria-hidden="true"><span data-marker-letter></span></span>
-
-            <div class="stop-body">
-                <div class="input-shell" data-field="name">
-                    <svg class="input-icon icon" aria-hidden="true"><use href="#icon-pin"/></svg>
-                    <input type="text" data-input="name" placeholder="Search for a place"
-                           autocomplete="off" spellcheck="false">
-                </div>
-
-                <div class="input-shell tight" data-field="duration">
-                    <svg class="input-icon icon" aria-hidden="true"><use href="#icon-clock"/></svg>
-                    <input type="text" data-input="duration" inputmode="numeric"
-                           aria-label="Minutes to spend here" autocomplete="off">
-                    <span class="input-suffix">min</span>
-                </div>
-
-                <div class="stop-errors">
-                    <p class="error" data-error-for="name"></p>
-                    <p class="error" data-error-for="duration"></p>
-                </div>
-            </div>
-
-            <div class="stop-tools">
-                <button type="button" class="icon-btn" data-remove aria-label="Remove this stop">
-                    <svg class="icon" aria-hidden="true"><use href="#icon-close"/></svg>
-                </button>
-                <span class="icon-btn handle" data-handle aria-hidden="true" title="Drag to reorder">
-                    <svg class="icon"><use href="#icon-drag"/></svg>
-                </span>
-            </div>
-        </div>
-    </template>
+        <div id="result"></div>
+    </div>
 
     <script src="main.js"></script>
 </body>
