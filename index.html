@@ -11,11 +11,92 @@
 
     <div class="container">
         <h1>Building Visit Planner</h1>
+        <p class="tagline">
+            Tell us your window and the places you want to see &mdash;
+            we&rsquo;ll lay out the day for you.
+        </p>
 
-        <button onclick="getSchedule()">Create Schedule</button>
+        <button class="primary" id="openPlanner">Create Schedule</button>
 
         <div id="result"></div>
     </div>
+
+    <dialog id="plannerDialog" aria-labelledby="plannerTitle">
+        <form id="plannerForm" novalidate>
+            <header class="dialog-head">
+                <h2 id="plannerTitle">Plan your visit</h2>
+                <button type="button" class="icon-btn close" id="closePlanner" aria-label="Close">&times;</button>
+            </header>
+
+            <div class="dialog-body">
+                <section class="field-group">
+                    <h3>Time window</h3>
+                    <div class="window-row">
+                        <div class="field" data-field="startTime">
+                            <label id="startTimeLabel">Start time</label>
+                            <div class="time-picker" id="startTimePicker" data-role="time"
+                                 role="group" aria-labelledby="startTimeLabel"></div>
+                            <p class="error" data-error-for="startTime"></p>
+                        </div>
+
+                        <div class="field" data-field="endTime">
+                            <label id="endTimeLabel">End time</label>
+                            <div class="time-picker" id="endTimePicker" data-role="time"
+                                 role="group" aria-labelledby="endTimeLabel"></div>
+                            <p class="error" data-error-for="endTime"></p>
+                        </div>
+                    </div>
+                    <p class="hint" id="windowHint"></p>
+                </section>
+
+                <section class="field-group">
+                    <div class="section-head">
+                        <h3>Locations</h3>
+                        <span class="budget" id="budgetPill"></span>
+                    </div>
+
+                    <div id="locationList" class="location-list"></div>
+
+                    <button type="button" class="ghost add" id="addLocation">
+                        <span aria-hidden="true">+</span> Add another location
+                    </button>
+                    <p class="error" data-error-for="locations"></p>
+                </section>
+            </div>
+
+            <footer class="dialog-foot">
+                <p class="summary" id="formSummary" role="status"></p>
+                <div class="foot-actions">
+                    <button type="button" class="ghost" id="cancelPlanner">Cancel</button>
+                    <button type="submit" class="primary" id="submitPlanner">Create schedule</button>
+                </div>
+            </footer>
+        </form>
+    </dialog>
+
+    <template id="locationRowTemplate">
+        <div class="location-row" data-row>
+            <div class="row-index" data-row-index></div>
+
+            <div class="field grow" data-field="name">
+                <label>Location</label>
+                <input type="text" data-input="name" placeholder="e.g. Acropolis Museum"
+                       autocomplete="off" spellcheck="false">
+                <p class="error" data-error-for="name"></p>
+            </div>
+
+            <div class="field" data-field="duration">
+                <label>Time spent</label>
+                <div class="duration-picker" data-role="duration" role="group"
+                     aria-label="Minutes at this location"></div>
+                <p class="error" data-error-for="duration"></p>
+            </div>
+
+            <button type="button" class="icon-btn remove" data-remove aria-label="Remove this location">
+                &times;
+            </button>
+        </div>
+    </template>
 
     <script src="main.js"></script>
 </body>
