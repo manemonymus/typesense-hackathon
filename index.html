@@ -8,8 +8,22 @@
 </head>
 
 <body>
-
+    <header>
+        <nav>
+            <ul>
+                <li><a href="index.html">Home</a></li>
+                <li><a href="schedule.html">Schedule</a></li>
+                <li><a href="about.html">About</a></li>
+            </ul>
+        </nav>
+    </header>
+    
+    
     <div class="container">
+        <button onclick="document.getElementById('myModal').showModal()">New Route</button>
+        <dialog class="modal" id="myModal">
+            <button onclick="document.getElementById('myModal').close()" class="close-button">✕</button>
+            
         <h1>Building Visit Planner</h1>
 
         <form id="scheduleForm" onsubmit="getSchedule(event)">
@@ -34,8 +48,10 @@
 
             <button type="submit">Create Schedule</button>
         </form>
-
+            
+        </dialog>
         <div id="result"></div>
+        
     </div>
 
     <script src="main.js"></script>
