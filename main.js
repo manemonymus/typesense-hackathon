@@ -1,11 +1,11 @@
 // Step 1: build one name/time input row per building, based on "num-buildings"
 function enterBuildingNames() {
-    const numBuildings = parseInt(document.getElementById("num-buildings").value);
+    const numBuildings = Number(document.getElementById("num-buildings").value);
     const container = document.getElementById("enter-building");
     container.innerHTML = "";
 
-    if (!numBuildings || numBuildings < 1) {
-        container.innerHTML = `<p class="error">Please enter a number of buildings greater than 0.</p>`;
+    if (!Number.isInteger(numBuildings) || numBuildings < 1 || numBuildings > 10) {
+        container.innerHTML = `<p class="error">Please retry with an integer from 1 to 10 buildings.</p>`;
         return;
     }
 
@@ -130,4 +130,45 @@ function getSchedule(event) {
             </li>
         `;
     }
+
+    generateOptions(totalTime, times, buildings, buildings.length);
+}
+
+function generateOptions(totalTime, times, buildings, n) {
+    if (n < 1) {
+        return [];
+    }
+
+    const pathList = [];
+
+    function buildPaths(startIndex, currentPath) {
+        if (currentPath.length === n) {
+            pathList.push([...currentPath]);
+            return;
+        }
+
+        for (let i = startIndex; i < buildings.length; i++) {
+            currentPath.push(buildings[i]);
+            buildPaths(i + 1, currentPath);
+            currentPath.pop();
+        }
+    }
+
+    buildPaths(0, []);
+
+    for (const path of pathList) {
+        if (pathfind(path, times, totalTime)) {
+            return path;
+        }
+    }
+
+    if (n === 1) {
+        return [];
+    }
+
+    return generateOptions(totalTime, times, buildings, n - 1);
+}
+
+function pathfind(path, times, totalTime) {
+    
 }
