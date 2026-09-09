@@ -11,7 +11,18 @@ function enterBuildingNames() {
 
     const header = document.createElement("div");
     header.className = "form-section-header";
-    header.innerHTML = `<h3>Buildings</h3><p>Enter a name and time (minutes) for each stop.</p>`;
+    header.innerHTML = `
+        <div>
+            <h3>Buildings</h3>
+            <p>Choose the buildings you want to visit and the time for each stop.</p>
+        </div>
+        <div class="form-row origin-row">
+            <label for="origin-building">Where are you now?</label>
+            <select id="origin-building" name="origin-building" onchange="updateBuildingSelections()">
+                ${getBuildingOptions("Choose an origin")}
+            </select>
+        </div>
+    `;
     container.appendChild(header);
 
     for (let i = 0; i < numBuildings; i++) {
@@ -26,7 +37,9 @@ function createBuildingRow(index) {
     row.innerHTML = `
         <div class="form-row">
             <label for="building-name-${index}">Building name</label>
-            <input type="text" id="building-name-${index}" name="building-name-${index}">
+            <select id="building-name-${index}" name="building-name-${index}" onchange="updateBuildingSelections()">
+                ${getBuildingOptions("Choose a building")}
+            </select>
         </div>
         <div class="form-row">
             <label for="building-time-${index}">Minutes</label>
@@ -35,6 +48,37 @@ function createBuildingRow(index) {
         <button type="button" class="remove-button" onclick="this.closest('.building-row').remove()">Remove</button>
     `;
     return row;
+}
+
+function getBuildingOptions(placeholder) {
+    return `<option value="">${placeholder}</option>` +
+        [...buildingPositions.keys()]
+            .map((building) => `<option value="${building}">${building}</option>`)
+            .join("");
+}
+
+function updateBuildingSelections() {
+    const origin = document.getElementById("origin-building")?.value;
+    const selects = document.querySelectorAll("#enter-building select[id^=\"building-name-\"]");
+
+    selects.forEach((select) => {
+        if (select.value === origin) {
+            select.value = "";
+        }
+    });
+
+    const selectedBuildings = new Set(
+        [...selects].map((select) => select.value).filter(Boolean)
+    );
+
+    selects.forEach((select) => {
+        [...select.options].forEach((option) => {
+            option.disabled = option.value !== "" && (
+                option.value === origin ||
+                (selectedBuildings.has(option.value) && option.value !== select.value)
+            );
+        });
+    });
 }
 
 function findDifference(startTime, endTime) {
@@ -89,12 +133,13 @@ function getSchedule(event) {
         return;
     }
 
+    const origin = document.getElementById("origin-building")?.value;
     const buildings = [];
     const times = [];
     let hasError = false;
 
     rows.forEach((row) => {
-        const nameInput = row.querySelector('input[id^="building-name-"]');
+        const nameInput = row.querySelector('select[id^="building-name-"]');
         const timeInput = row.querySelector('input[id^="building-time-"]');
         const name = nameInput.value.trim();
         const time = parseInt(timeInput.value);
@@ -107,8 +152,14 @@ function getSchedule(event) {
         times.push(time);
     });
 
-    if (hasError) {
-        result.innerHTML = `<p class="error">Please fill in a name and a numeric time for every building.</p>`;
+    if (!origin) {
+        result.innerHTML = `<p class="error">Please choose your current location.</p>`;
+        return;
+    }
+
+    if (hasError || buildings.some((building) => building === origin) ||
+        new Set(buildings).size !== buildings.length) {
+        result.innerHTML = `<p class="error">Please choose a different building for every stop, and do not choose your origin.</p>`;
         return;
     }
 
@@ -131,7 +182,7 @@ function getSchedule(event) {
         `;
     }
 
-    const path = generateOptions(totalTime, times, buildings, buildings.length, buildingPositions);
+    const path = generateOptions(totalTime, times, buildings, buildings.length, buildingPositions, origin);
     const pathDisplay = Array.isArray(path) && path.length > 0 ? path.join(" -> ") : "No possible path found.";
     result.innerHTML += `<p><strong>Recommended path:</strong> ${pathDisplay}</p>`;
 }
@@ -154,7 +205,7 @@ function generateBuildingMap(buildingCount) {
 
 const buildingPositions = generateBuildingMap(10);
 
-function generateOptions(totalTime, times, buildings, n, buildingPositions) {
+function generateOptions(totalTime, times, buildings, n, buildingPositions, origin) {
     if (n < 1) {
         return [];
     }
@@ -177,17 +228,18 @@ function generateOptions(totalTime, times, buildings, n, buildingPositions) {
     buildPaths(0, []);
 
     for (const path of pathList) {
-        const out = pathfind(path, times, buildings, totalTime, buildingPositions);
+        const out = pathfind(path, times, buildings, totalTime, buildingPositions, origin);
         if (out != "N/A") {
             return out;
         }
     }
     
-    return generateOptions(totalTime, times, buildings, n - 1, buildingPositions);
+    return generateOptions(totalTime, times, buildings, n - 1, buildingPositions, origin);
 }
 
-function pathfind(path, times, buildings, totalTime, buildingPositions) {
-    if (!buildingPositions || path.some((building) => !buildingPositions.has(building))) {
+function pathfind(path, times, buildings, totalTime, buildingPositions, origin) {
+    if (!buildingPositions || !buildingPositions.has(origin) ||
+        path.some((building) => !buildingPositions.has(building))) {
         return "N/A";
     }
 
@@ -269,14 +321,18 @@ function pathfind(path, times, buildings, totalTime, buildingPositions) {
 
     const visitTime = path.reduce((total, building) => total + visitTimes.get(building), 0);
     const walkableDistance = Math.max(0, totalTime - visitTime) / 13;
-    const start = path[0];
-    const remainingBuildings = path.slice(1);
+    const start = origin;
+    const remainingBuildings = path;
     let bestDistance = Infinity;
     let bestRoute = null;
 
     function findBestRoute(current, remaining, distance, route) {
         if (remaining.length === 0) {
             const returnTrip = shortestPath(current, start);
+            if (!Number.isFinite(returnTrip.distance)) {
+                return;
+            }
+
             const totalDistance = distance + returnTrip.distance;
             if (totalDistance < bestDistance) {
                 bestDistance = totalDistance;
@@ -288,6 +344,10 @@ function pathfind(path, times, buildings, totalTime, buildingPositions) {
         for (let i = 0; i < remaining.length; i++) {
             const nextBuilding = remaining[i];
             const trip = shortestPath(current, nextBuilding);
+            if (!Number.isFinite(trip.distance)) {
+                continue;
+            }
+
             findBestRoute(
                 nextBuilding,
                 remaining.filter((_, index) => index !== i),
