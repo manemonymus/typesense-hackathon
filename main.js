@@ -131,10 +131,30 @@ function getSchedule(event) {
         `;
     }
 
-    generateOptions(totalTime, times, buildings, buildings.length);
+    const path = generateOptions(totalTime, times, buildings, buildings.length, buildingPositions);
+    const pathDisplay = Array.isArray(path) && path.length > 0 ? path.join(" -> ") : "No possible path found.";
+    result.innerHTML += `<p><strong>Recommended path:</strong> ${pathDisplay}</p>`;
 }
 
-function generateOptions(totalTime, times, buildings, n) {
+// TODO: Convert building inputs to a dropdown of buildings from the generated list.
+function generateBuildingMap(buildingCount) {
+    const buildingPositions = new Map();
+    const gridWidth = Math.ceil(Math.sqrt(buildingCount));
+
+    for (let index = 0; index < buildingCount; index++) {
+        const letter = String.fromCharCode("A".charCodeAt(0) + index);
+        buildingPositions.set(`Building ${letter}`, {
+            x: index % gridWidth,
+            y: Math.floor(index / gridWidth)
+        });
+    }
+
+    return buildingPositions;
+}
+
+const buildingPositions = generateBuildingMap(10);
+
+function generateOptions(totalTime, times, buildings, n, buildingPositions) {
     if (n < 1) {
         return [];
     }
@@ -157,18 +177,131 @@ function generateOptions(totalTime, times, buildings, n) {
     buildPaths(0, []);
 
     for (const path of pathList) {
-        if (pathfind(path, times, totalTime)) {
-            return path;
+        const out = pathfind(path, times, buildings, totalTime, buildingPositions);
+        if (out != "N/A") {
+            return out;
+        }
+    }
+    
+    return generateOptions(totalTime, times, buildings, n - 1, buildingPositions);
+}
+
+function pathfind(path, times, buildings, totalTime, buildingPositions) {
+    if (!buildingPositions || path.some((building) => !buildingPositions.has(building))) {
+        return "N/A";
+    }
+
+    const allBuildings = [...buildingPositions.keys()];
+    const graph = new Map();
+    for (const building of allBuildings) {
+        graph.set(building, []);
+    }
+
+    for (let i = 0; i < allBuildings.length; i++) {
+        for (let j = i + 1; j < allBuildings.length; j++) {
+            const from = allBuildings[i];
+            const to = allBuildings[j];
+            const fromPosition = buildingPositions.get(from);
+            const toPosition = buildingPositions.get(to);
+            const distance = Math.abs(fromPosition.x - toPosition.x) +
+                Math.abs(fromPosition.y - toPosition.y);
+
+            if (distance === 1) {
+                graph.get(from).push({ building: to, distance });
+                graph.get(to).push({ building: from, distance });
+            }
         }
     }
 
-    if (n === 1) {
-        return [];
+    function shortestPath(start, end) {
+        const distances = new Map(allBuildings.map((building) => [building, Infinity]));
+        const previous = new Map();
+        const unvisited = new Set(allBuildings);
+        distances.set(start, 0);
+
+        while (unvisited.size > 0) {
+            let current = null;
+            for (const building of unvisited) {
+                if (current === null || distances.get(building) < distances.get(current)) {
+                    current = building;
+                }
+            }
+
+            if (current === null || distances.get(current) === Infinity) {
+                break;
+            }
+
+            unvisited.delete(current);
+            if (current === end) {
+                break;
+            }
+
+            for (const neighbor of graph.get(current)) {
+                const distance = distances.get(current) + neighbor.distance;
+                if (distance < distances.get(neighbor.building)) {
+                    distances.set(neighbor.building, distance);
+                    previous.set(neighbor.building, current);
+                }
+            }
+        }
+
+        const route = [];
+        let current = end;
+        while (current !== undefined) {
+            route.unshift(current);
+            if (current === start) {
+                break;
+            }
+            current = previous.get(current);
+        }
+
+        return {
+            distance: distances.get(end),
+            route
+        };
     }
 
-    return generateOptions(totalTime, times, buildings, n - 1);
-}
+    const visitTimes = new Map();
+    path.forEach((building) => {
+        const buildingIndex = buildings.indexOf(building);
+        visitTimes.set(building, times[buildingIndex]);
+    });
 
-function pathfind(path, times, totalTime) {
-    
+    const visitTime = path.reduce((total, building) => total + visitTimes.get(building), 0);
+    const walkableDistance = Math.max(0, totalTime - visitTime) / 13;
+    const start = path[0];
+    const remainingBuildings = path.slice(1);
+    let bestDistance = Infinity;
+    let bestRoute = null;
+
+    function findBestRoute(current, remaining, distance, route) {
+        if (remaining.length === 0) {
+            const returnTrip = shortestPath(current, start);
+            const totalDistance = distance + returnTrip.distance;
+            if (totalDistance < bestDistance) {
+                bestDistance = totalDistance;
+                bestRoute = [...route, ...returnTrip.route.slice(1)];
+            }
+            return;
+        }
+
+        for (let i = 0; i < remaining.length; i++) {
+            const nextBuilding = remaining[i];
+            const trip = shortestPath(current, nextBuilding);
+            findBestRoute(
+                nextBuilding,
+                remaining.filter((_, index) => index !== i),
+                distance + trip.distance,
+                [...route, ...trip.route.slice(1)]
+            );
+        }
+    }
+
+    findBestRoute(start, remainingBuildings, 0, [start]);
+
+    if (bestDistance <= walkableDistance) {
+        return bestRoute;
+    }
+
+    return "N/A";
 }
