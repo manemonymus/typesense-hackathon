@@ -176,15 +176,17 @@ button:hover {
 
 .modal {
   position: relative;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
+  opacity: 90%;
   justify-content: center;
   align-items: center;
+  border-radius: 10px;
 }
 
 .close-button {
-  position: absolute;
+  position: sticky;
+  opacity: 50%;
   top: 10px;
+  float:right;
   right: 10px;
   background-color: #fff;
   border: none;
